@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Quiz Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom scrollbar for better UX */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #3b82f6;
+      border-radius: 10px;
+      border: 2px solid #f1f5f9;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-r from-blue-100 via-white to-blue-100 min-h-screen flex flex-col">
+
+  <header class="bg-white shadow-md py-6">
+    <h1 class="text-4xl font-extrabold text-center text-blue-700 tracking-wide select-none">AI Quiz Generator</h1>
+  </header>
+
+  <nav id="nav" class="hidden bg-blue-600 text-white flex justify-center space-x-6 py-4 shadow-md sticky top-0 z-50">
+    <button id="nav-generate" class="hover:bg-blue-500 px-4 py-2 rounded-md font-semibold transition">Generate Quiz</button>
+    <button id="nav-history" class="hover:bg-blue-500 px-4 py-2 rounded-md font-semibold transition">Quiz History</button>
+    <button id="nav-logout" class="hover:bg-red-500 px-4 py-2 rounded-md font-semibold transition">Logout</button>
+  </nav>
+
+  <main class="flex-grow container mx-auto px-4 py-8 max-w-3xl">
+
+    <!-- Auth Container -->
+    <section id="auth-container" class="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
+      <!-- Login -->
+      <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Login</h2>
+      <form id="login-form" class="space-y-5">
+        <div>
+          <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
+          <input type="email" id="login-email" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <div>
+          <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
+          <input type="password" id="login-password" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">Login</button>
+        <p class="text-center text-sm text-gray-600 mt-3">
+          Don't have an account? 
+          <a href="#" id="show-signup" class="text-blue-600 hover:underline font-semibold cursor-pointer">Sign up here</a>
+        </p>
+        <p id="login-error" class="text-red-600 text-center mt-2"></p>
+      </form>
+
+      <!-- Signup -->
+      <h2 id="signup-title" class="text-2xl font-bold text-center text-blue-700 mb-6 mt-10 hidden">Sign Up</h2>
+      <form id="signup-form" class="space-y-5 hidden">
+        <div>
+          <label for="signup-email" class="block text-sm font-medium text-gray-700">Email</label>
+          <input type="email" id="signup-email" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <div>
+          <label for="signup-password" class="block text-sm font-medium text-gray-700">Password</label>
+          <input type="password" id="signup-password" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">Sign Up</button>
+        <p class="text-center text-sm text-gray-600 mt-3">
+          Already have an account? 
+          <a href="#" id="show-login" class="text-blue-600 hover:underline font-semibold cursor-pointer">Login here</a>
+        </p>
+        <p id="signup-error" class="text-red-600 text-center mt-2"></p>
+      </form>
+    </section>
+
+    <!-- Quiz Generator -->
+    <section id="quiz-generator" class="hidden bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
+      <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Generate a Quiz</h2>
+      <form id="generate-form" class="space-y-5">
+        <div>
+          <label for="topic" class="block text-sm font-medium text-gray-700">Topic</label>
+          <input type="text" id="topic" placeholder="e.g. Science, History" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <div>
+          <label for="num-questions" class="block text-sm font-medium text-gray-700">Number of Questions</label>
+          <input type="number" id="num-questions" min="1" max="20" value="5" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">Generate Quiz</button>
+        <p id="generate-error" class="text-red-600 text-center mt-2"></p>
+      </form>
+    </section>
+
+    <!-- Quiz Container -->
+    <section id="quiz-container" class="hidden bg-white rounded-lg shadow-lg p-8 max-w-3xl mx-auto">
+      <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Take the Quiz</h2>
+      <form id="quiz-form" class="space-y-8">
+        <div id="questions-list" class="space-y-6 max-h-[60vh] overflow-y-auto pr-4"></div>
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-md transition">Submit Answers</button>
+        <p id="quiz-error" class="text-red-600 text-center mt-2"></p>
+      </form>
+      <div id="quiz-result" class="mt-6 text-center text-lg font-semibold text-green-700"></div>
+    </section>
+
+    <!-- History Container -->
+    <section id="history-container" class="hidden bg-white rounded-lg shadow-lg p-8 max-w-3xl mx-auto">
+      <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Your Quiz History</h2>
+      <ul id="history-list" class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto"></ul>
+    </section>
+
+  </main>
+
+  <footer class="bg-white text-center py-4 text-gray-500 select-none">
+    &copy; 2024 AI Quiz Generator. All rights reserved.
+  </footer>
+
+  <script>
+    // Elements
+    const authContainer = document.getElementById('auth-container');
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const loginError = document.getElementById('login-error');
+    const signupError = document.getElementById('signup-error');
+    const showSignupLink = document.getElementById('show-signup');
+    const showLoginLink = document.getElementById('show-login');
+    const signupTitle = document.getElementById('signup-title');
+
+    const nav = document.getElementById('nav');
+    const navGenerate = document.getElementById('nav-generate');
+    const navHistory = document.getElementById('nav-history');
+    const navLogout = document.getElementById('nav-logout');
+
+    const quizGenerator = document.getElementById('quiz-generator');
+    const generateForm = document.getElementById('generate-form');
+    const generateError = document.getElementById('generate-error');
+
+    const quizContainer = document.getElementById('quiz-container');
+    const questionsList = document.getElementById('questions-list');
+    const quizForm = document.getElementById('quiz-form');
+    const quizError = document.getElementById('quiz-error');
+    const quizResult = document.getElementById('quiz-result');
+
+    const historyContainer = document.getElementById('history-container');
+    const historyList = document.getElementById('history-list');
+
+    let currentQuestions = [];
+    let currentTopic = '';
+
+    // Show signup form
+    showSignupLink.addEventListener('click', e => {
+      e.preventDefault();
+      loginForm.classList.add('hidden');
+      signupForm.classList.remove('hidden');
+      signupTitle.classList.remove('hidden');
+      loginError.textContent = '';
+      signupError.textContent = '';
+    });
+
+    // Show login form
+    showLoginLink.addEventListener('click', e => {
+      e.preventDefault();
+      signupForm.classList.add('hidden');
+      signupTitle.classList.add('hidden');
+      loginForm.classList.remove('hidden');
+      loginError.textContent = '';
+      signupError.textContent = '';
+    });
+
+    // Login handler
+    loginForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      loginError.textContent = '';
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email, password})
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          onLoginSuccess();
+        } else {
+          loginError.textContent = data.message || 'Login failed';
+        }
+      } catch (err) {
+        loginError.textContent = 'Server error. Please try again later.';
+      }
+    });
+
+    // Signup handler
+    signupForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      signupError.textContent = '';
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value.trim();
+
+      try {
+        const res = await fetch('/signup', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email, password})
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          onLoginSuccess();
+        } else {
+          signupError.textContent = data.message || 'Signup failed';
+        }
+      } catch (err) {
+        signupError.textContent = 'Server error. Please try again later.';
+      }
+    });
+
+    // Logout handler
+    navLogout.addEventListener('click', async () => {
+      await fetch('/logout', {method: 'POST'});
+      location.reload();
+    });
+
+    // Navigation buttons
+    navGenerate.addEventListener('click', () => {
+      showSection('generate');
+    });
+    navHistory.addEventListener('click', () => {
+      loadHistory();
+      showSection('history');
+    });
+
+    // Generate quiz handler
+    generateForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      generateError.textContent = '';
+      quizResult.textContent = '';
+      questionsList.innerHTML = '';
+      quizContainer.classList.add('hidden');
+
+      const topic = document.getElementById('topic').value.trim();
+      const numQuestions = parseInt(document.getElementById('num-questions').value);
+
+      if (!topic || numQuestions < 1) {
+        generateError.textContent = 'Please enter a valid topic and number of questions.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/generate_quiz', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({topic, num_questions: numQuestions})
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          currentQuestions = data.questions;
+          currentTopic = topic;
+          renderQuiz(currentQuestions);
+          showSection('quiz');
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        } else {
+          generateError.textContent = data.message || 'Failed to generate quiz.';
+        }
+      } catch (err) {
+        generateError.textContent = 'Server error. Please try again later.';
+      }
+    });
+
+    // Render quiz questions
+    function renderQuiz(questions) {
+      questionsList.innerHTML = '';
+      questions.forEach((q, i) => {
+        const div = document.createElement('div');
+        div.className = 'quiz-question bg-blue-50 p-4 rounded-md shadow-sm';
+        div.innerHTML = `
+          <p class="font-semibold text-blue-800 mb-3">Q${i + 1}: ${q.question}</p>
+          <div class="space-y-2">
+            ${q.options.map((opt, idx) => `
+              <label class="flex items-center space-x-3 cursor-pointer hover:bg-blue-100 rounded-md p-2 transition">
+                <input type="radio" name="q${i}" value="${idx}" required class="form-radio text-blue-600" />
+                <span class="text-gray-800">${opt}</span>
+              </label>
+            `).join('')}
+          </div>
+        `;
+        questionsList.appendChild(div);
+      });
+      quizError.textContent = '';
+      quizResult.textContent = '';
+    }
+
+    // Quiz submit handler
+    quizForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      quizError.textContent = '';
+      quizResult.textContent = '';
+
+      const formData = new FormData(quizForm);
+      let score = 0;
+      for (let i = 0; i < currentQuestions.length; i++) {
+        const answer = formData.get(`q${i}`);
+        if (answer === null) {
+          quizError.textContent = 'Please answer all questions.';
+          return;
+        }
+        if (parseInt(answer) === currentQuestions[i].answer) {
+          score++;
+        }
+      }
+
+      quizResult.textContent = `You scored ${score} out of ${currentQuestions.length}. Saving result...`;
+
+      try {
+        const res = await fetch('/save_result', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            topic: currentTopic,
+            score: score,
+            total: currentQuestions.length
+          })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          quizResult.textContent += ' Result saved!';
+        } else {
+          quizResult.textContent += ' But failed to save result.';
+        }
+      } catch (err) {
+        quizResult.textContent += ' But server error occurred while saving.';
+      }
+    });
+
+    // Load quiz history
+    async function loadHistory() {
+      historyList.innerHTML = '<li class="text-center py-4 text-gray-500">Loading...</li>';
+      try {
+        const res = await fetch('/quiz_history');
+        const data = await res.json();
+        if (data.status === 'success') {
+          if (data.history.length === 0) {
+            historyList.innerHTML = '<li class="text-center py-4 text-gray-500">No quiz history found.</li>';
+          } else {
+            historyList.innerHTML = '';
+            data.history.forEach(item => {
+              const li = document.createElement('li');
+              const date = new Date(item.date).toLocaleString();
+              li.className = 'py-4 px-6 hover:bg-blue-50 rounded-md cursor-default select-text';
+              li.textContent = `${date} — Topic: ${item.topic} — Score: ${item.score} / ${item.total}`;
+              historyList.appendChild(li);
+            });
+          }
+        } else {
+          historyList.innerHTML = '<li class="text-center py-4 text-red-600">Failed to load history.</li>';
+        }
+      } catch (err) {
+        historyList.innerHTML = '<li class="text-center py-4 text-red-600">Server error while loading history.</li>';
+      }
+    }
+
+    // Show sections based on state
+    function showSection(section) {
+      authContainer.classList.add('hidden');
+      nav.classList.remove('hidden');
+      quizGenerator.classList.add('hidden');
+      quizContainer.classList.add('hidden');
+      historyContainer.classList.add('hidden');
+
+      if (section === 'generate') {
+        quizGenerator.classList.remove('hidden');
+      } else if (section === 'quiz') {
+        quizContainer.classList.remove('hidden');
+      } else if (section === 'history') {
+        historyContainer.classList.remove('hidden');
+      }
+    }
+
+    // On successful login/signup
+    function onLoginSuccess() {
+      authContainer.classList.add('hidden');
+      nav.classList.remove('hidden');
+      quizGenerator.classList.remove('hidden');
+      signupForm.classList.add('hidden');
+      signupTitle.classList.add('hidden');
+      loginForm.classList.remove('hidden');
+      loginError.textContent = '';
+      signupError.textContent = '';
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    // On page load, check if user is logged in by trying to fetch quiz history
+    async function checkLogin() {
+      try {
+        const res = await fetch('/quiz_history');
+        if (res.status === 200) {
+          const data = await res.json();
+          if (data.status === 'success') {
+            onLoginSuccess();
+          }
+        }
+      } catch {
+        // Not logged in or server error, show login form
+      }
+    }
+
+    checkLogin();
+  </script>
+</body>
+</html>
+``
